@@ -179,10 +179,15 @@ def find_claude_binary() -> str:
 
     # Windows
     if platform.system() == "Windows":
-        candidates += [
-            Path.home() / "AppData" / "Local" / "Programs" / "claude-code" / "claude.exe",
+        appdata_local = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+        appdata_roaming = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+        candidates = [
+            appdata_local / "Programs" / "claude-code" / "claude.exe",
+            appdata_roaming / "npm" / "claude.cmd",
+            appdata_roaming / "npm" / "claude",
             Path.home() / ".local" / "bin" / "claude.exe",
-        ]
+            Path.home() / ".local" / "bin" / "claude",
+        ] + candidates
 
     for c in candidates:
         if c.exists():
@@ -230,6 +235,7 @@ def _create_launcher_script(state: dict):
 import json
 import sys
 import os
+import platform
 import subprocess
 import time
 from pathlib import Path
@@ -260,6 +266,24 @@ def update_prompt_with_failure(state, reason):
     )
     return state
 
+def run_claude(claude_cmd, work_dir):
+    """Run claude command, cross-platform."""
+    is_windows = platform.system() == "Windows"
+    if is_windows:
+        result = subprocess.run(
+            claude_cmd,
+            cwd=work_dir,
+            shell=True,
+            timeout=None
+        )
+    else:
+        result = subprocess.run(
+            ["bash", "-c", claude_cmd],
+            cwd=work_dir,
+            timeout=None
+        )
+    return result
+
 def main():
     state = load_state()
     if state.get("status") != "ARMED":
@@ -273,7 +297,7 @@ def main():
     terminal = state.get("terminal", "gnome-terminal")
     work_dir = state.get("work_dir", str(Path.home()))
 
-    # Wait for desktop environment to be ready (Linux/Mac)
+    # Wait for desktop environment to be ready
     time.sleep(5)
 
     for attempt in range(max_restarts + 1):
@@ -284,7 +308,7 @@ def main():
 
         # Build claude command
         claude = state.get("claude_binary", "claude")
-        parts = [claude]
+        parts = [f'"{{claude}}"' if " " in claude else claude]
 
         permission = state.get("permission", "default")
         if permission == "bypassPermissions":
@@ -305,13 +329,7 @@ def main():
         print(f"[SRAIL] Attempt {{attempt + 1}}/{{max_restarts + 1}}: {{claude_cmd}}")
 
         try:
-            # Run in working directory, visible in terminal
-            env = os.environ.copy()
-            result = subprocess.run(
-                ["bash", "-c", f"cd {{json.dumps(work_dir)}} && {{claude_cmd}}"],
-                env=env,
-                timeout=None  # no timeout — let it run
-            )
+            result = run_claude(claude_cmd, work_dir)
 
             if result.returncode == 0:
                 print("[SRAIL] Claude Code exited normally.")
@@ -360,8 +378,10 @@ def register_autostart(state: dict) -> str:
 
     _create_launcher_script(state)
 
-    python = sys.executable or "python3"
-    launcher_cmd = f"{python} {LAUNCHER_SCRIPT}"
+    python = sys.executable
+    if not python:
+        python = "python" if platform.system() == "Windows" else "python3"
+    launcher_cmd = f'"{python}" "{LAUNCHER_SCRIPT}"'
 
     if system == "Linux":
         return _register_linux(launcher_cmd, terminal, state)

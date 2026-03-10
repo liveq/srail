@@ -25,9 +25,16 @@ When Claude Code is running long autonomous tasks (firmware flashing, large migr
 
 ## Install / 설치
 
+**Linux / macOS:**
 ```bash
 git clone https://github.com/liveq/srail.git ~/srail
 claude mcp add srail -- python3 ~/srail/srail.py
+```
+
+**Windows (PowerShell):**
+```powershell
+git clone https://github.com/liveq/srail.git $HOME\srail
+claude mcp add srail -- python $HOME\srail\srail.py
 ```
 
 Claude Code를 재시작하면 `srail_start`, `srail_stop`, `srail_status` 도구가 자동으로 사용 가능합니다.
