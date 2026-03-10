@@ -1,0 +1,7 @@
+state/
+prompts/
+venv/
+__pycache__/
+*.pyc
+launcher.py
+launcher.bat
