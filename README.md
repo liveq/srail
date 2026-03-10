@@ -1,18 +1,21 @@
-# SRAIL — Self-healing Recursive AI Improvement Loop
+# SRAIL — Claude Code MCP Server for Auto-Recovery
 
-> An MCP tool that lets Claude Code automatically recover after reboot or crash, improving with each failure.
+**Self-healing Recursive AI Improvement Loop**
+
+> A Model Context Protocol (MCP) server that lets Claude Code automatically recover after reboot or crash, learning from each failure.
 >
-> Claude Code가 재부팅/크래시 후 자동으로 살아나고, 실패할 때마다 더 나아지는 자율 복구 MCP 도구
+> Claude Code가 재부팅/크래시 후 자동으로 살아나고, 실패할 때마다 더 나아지는 자율 복구 MCP 서버
 
 ## Overview / 개요
 
-During long autonomous tasks, if a reboot is needed or Claude Code unexpectedly terminates, SRAIL automatically recovers it.
+When Claude Code is running long autonomous tasks (firmware flashing, large migrations, multi-step builds), a reboot or unexpected crash shouldn't kill the whole workflow. SRAIL is an MCP server that Claude Code uses to **register itself for automatic recovery** — it arms before reboot, and the OS brings it back.
 
-장시간 자율 작업 중 재부팅이 필요하거나, Claude Code가 예기치 않게 종료되어도 자동으로 복구합니다.
+장시간 자율 작업(펌웨어 복구, 대규모 마이그레이션, 멀티스텝 빌드 등) 중 재부팅이나 크래시가 발생해도 작업이 중단되지 않습니다. SRAIL은 Claude Code가 **스스로 자동 복구를 등록하는** MCP 서버입니다.
 
-- Claude Code **arms and disarms itself** — no user intervention needed
-- **OS-level autostart** restores Claude Code after reboot
-- On crash, **failure reason is fed back into the prompt** for smarter retries
+- **MCP integration** — Claude Code discovers and uses SRAIL tools automatically
+- **Self-managed** — Claude Code arms before reboot, disarms when done. No user intervention
+- **OS-level autostart** — systemd (Linux) / launchd (macOS) / Task Scheduler (Windows)
+- **Crash recovery** — failure reason is fed back into the prompt for smarter retries
 - **Cross-platform**: Linux / macOS / Windows
 - Pure Python, zero external dependencies
 
